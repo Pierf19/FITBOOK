@@ -42,11 +42,11 @@ function BookingCard({ booking, onCancel }) {
         </div>
         
         <p className="text-sm text-gray-400 font-medium">
-          {booking.trainerSpecialization?.join(" & ")} · {getDayShort(booking.sessionDate)}, {booking.startTime}
+          {booking.trainerSpecialization?.join(" & ")} · {getDayShort(booking.sessionDate)}, {booking.times ? booking.times.join(", ") : booking.startTime}
         </p>
         
         <p className="text-xs text-gray-500">
-          {booking.sessionCount || 1} Sesi ({parseInt(booking.endTime) - parseInt(booking.startTime)} jam) · {booking.level || "Umum"} · {formatIDR(booking.pricePerSession)}
+          {booking.sessionCount || 1} Sesi ({booking.sessionCount || 1} jam) · {booking.level || "Umum"} · {formatIDR(booking.pricePerSession * (booking.sessionCount || 1))}
         </p>
       </div>
 
@@ -74,7 +74,7 @@ function BookingCard({ booking, onCancel }) {
                 <button
                   onClick={async () => {
                     setLoading(true);
-                    await onCancel(booking._id);
+                    await onCancel(booking.bookingIds || [booking._id]);
                     setLoading(false);
                     setConfirming(false);
                   }}
@@ -277,16 +277,42 @@ function UserDashboard({ me, sessionEmail }) {
   const cancelBooking = useMutation(api.bookings.cancelBooking);
 
   const today = new Date().toISOString().split("T")[0];
-  const upcoming = bookings?.filter(
+
+  const groupBookings = (list) => {
+    if (!list) return [];
+    const map = new Map();
+    list.forEach(b => {
+      const key = `${b.trainerId}-${b.sessionDate}-${b.status}`;
+      if (!map.has(key)) {
+        map.set(key, { ...b, times: [b.startTime], bookingIds: [b._id], sessionCount: 1 });
+      } else {
+        const group = map.get(key);
+        group.times.push(b.startTime);
+        group.bookingIds.push(b._id);
+        group.sessionCount = group.times.length;
+      }
+    });
+    return Array.from(map.values()).map(g => {
+      g.times.sort();
+      return g;
+    });
+  };
+
+  const rawUpcoming = bookings?.filter(
     (b) => b.sessionDate >= today && b.status !== "cancelled"
   ) ?? [];
-  const past = bookings?.filter(
+  const rawPast = bookings?.filter(
     (b) => b.sessionDate < today || b.status === "cancelled"
   ) ?? [];
 
-  async function handleCancel(bookingId) {
+  const upcoming = groupBookings(rawUpcoming);
+  const past = groupBookings(rawPast);
+
+  async function handleCancel(bookingIds) {
     if (!sessionEmail) return;
-    await cancelBooking({ bookingId, userEmail: sessionEmail });
+    for (const id of bookingIds) {
+      await cancelBooking({ bookingId: id, userEmail: sessionEmail });
+    }
   }
 
   return (

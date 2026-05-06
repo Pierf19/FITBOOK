@@ -1,11 +1,34 @@
 // src/pages/BookingPage.jsx
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import ScheduleCalendar from "../components/ScheduleCalendar.jsx";
 import { useCurrentUser } from "../hooks/useCurrentUser.js";
 import { Check } from "lucide-react";
+
+// Hari yang ditampilkan di kalender (urutan kolom)
+const DAYS_EN = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+const EN_INDEX = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+// Hitung 7 tanggal terdekat (satu per hari dalam seminggu)
+function getWeekDates() {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const todayIndex = today.getDay();
+  return DAYS_EN.map((dayEn) => {
+    const targetIndex = EN_INDEX.indexOf(dayEn);
+    let diff = targetIndex - todayIndex;
+    if (diff < 0) diff += 7;
+    const d = new Date(today);
+    d.setDate(today.getDate() + diff);
+    return [
+      d.getFullYear(),
+      String(d.getMonth() + 1).padStart(2, "0"),
+      String(d.getDate()).padStart(2, "0"),
+    ].join("-");
+  });
+}
 
 export default function BookingPage() {
   const { trainerId } = useParams();
@@ -14,9 +37,18 @@ export default function BookingPage() {
   const trainer = useQuery(api.trainers.getTrainer, { trainerId });
   const createBooking = useMutation(api.bookings.createBooking);
 
+  // Hitung tanggal 7 hari ke depan sekali (stabil selama komponen hidup)
+  const weekDates = useMemo(() => getWeekDates(), []);
+
+  // Ambil semua slot yang sudah terpesan untuk trainer ini, realtime via Convex
+  const bookedSlots = useQuery(
+    api.bookings.getBookedSlotsForDates,
+    trainerId ? { trainerId, dates: weekDates } : "skip"
+  );
+
   // Stepper state: 2=Jadwal, 3=Data Diri, 4=Konfirmasi, 5=Success
   const [step, setStep] = useState(2);
-  const [selectedSlot, setSelectedSlot] = useState(null);
+  const [selectedSlots, setSelectedSlots] = useState([]);
   const [formData, setFormData] = useState({ whatsapp: "", level: "Pemula" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -41,7 +73,7 @@ export default function BookingPage() {
       return;
     }
 
-    if (!selectedSlot) {
+    if (selectedSlots.length === 0) {
       setError("Pilih jadwal terlebih dahulu.");
       return;
     }
@@ -49,16 +81,20 @@ export default function BookingPage() {
     setLoading(true);
     setError(null);
     try {
-      await createBooking({
-        trainerId: trainer._id,
-        sessionDate: selectedSlot.date,
-        startTime: selectedSlot.startTime,
-        endTime: selectedSlot.endTime,
-        whatsapp: formData.whatsapp,
-        level: formData.level,
-        sessionCount: 1,
-        userEmail: sessionEmail,
-      });
+      await Promise.all(
+        selectedSlots.map((slot) =>
+          createBooking({
+            trainerId: trainer._id,
+            sessionDate: slot.date,
+            startTime: slot.startTime,
+            endTime: slot.endTime,
+            whatsapp: formData.whatsapp,
+            level: formData.level,
+            sessionCount: 1,
+            userEmail: sessionEmail,
+          })
+        )
+      );
       setStep(5);
       setTimeout(() => navigate("/dashboard"), 900);
     } catch (err) {
@@ -68,10 +104,22 @@ export default function BookingPage() {
     }
   };
 
-  const dayLabel = {
-    Monday: "Sen", Tuesday: "Sel", Wednesday: "Rab",
-    Thursday: "Kam", Friday: "Jum", Saturday: "Sab", Sunday: "Min"
-  }[selectedSlot?.day];
+  const getDayLabel = (day) => {
+    return {
+      Monday: "Sen", Tuesday: "Sel", Wednesday: "Rab",
+      Thursday: "Kam", Friday: "Jum", Saturday: "Sab", Sunday: "Min"
+    }[day];
+  };
+
+  const handleSlotToggle = (slot) => {
+    setSelectedSlots(prev => {
+      const exists = prev.find(s => s.date === slot.date && s.startTime === slot.startTime);
+      if (exists) {
+        return prev.filter(s => !(s.date === slot.date && s.startTime === slot.startTime));
+      }
+      return [...prev, slot];
+    });
+  };
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white pt-10 pb-20">
@@ -135,8 +183,9 @@ export default function BookingPage() {
 
             <ScheduleCalendar
               trainer={trainer}
-              onSlotSelect={setSelectedSlot}
-              selectedSlot={selectedSlot}
+              onSlotSelect={handleSlotToggle}
+              selectedSlots={selectedSlots}
+              bookedSlots={bookedSlots ?? {}}
             />
 
             <div className="mt-10 flex gap-4">
@@ -147,7 +196,7 @@ export default function BookingPage() {
                 ← Kembali
               </button>
               <button
-                disabled={!selectedSlot}
+                disabled={selectedSlots.length === 0}
                 onClick={() => setStep(3)}
                 className="px-6 py-3 rounded-md bg-[#cdff00] text-black font-bold text-sm hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
               >
@@ -224,7 +273,11 @@ export default function BookingPage() {
                 </div>
                 <div className="flex justify-between border-b border-[#222] pb-4">
                   <span className="text-gray-500">Jadwal</span>
-                  <span className="text-white">{dayLabel} • {selectedSlot.startTime}</span>
+                  <div className="text-white text-right space-y-1">
+                    {selectedSlots.map(s => (
+                      <div key={s.date + s.startTime}>{getDayLabel(s.day)} • {s.date} • {s.startTime}</div>
+                    ))}
+                  </div>
                 </div>
                 <div className="flex justify-between border-b border-[#222] pb-4">
                   <span className="text-gray-500">Nama</span>
@@ -240,11 +293,11 @@ export default function BookingPage() {
                 </div>
                 <div className="flex justify-between border-b border-[#222] pb-4">
                   <span className="text-gray-500">Sesi</span>
-                  <span className="text-white">1 Sesi (1 jam)</span>
+                  <span className="text-white">{selectedSlots.length} Sesi ({selectedSlots.length} jam)</span>
                 </div>
                 <div className="flex justify-between pt-2">
                   <span className="text-gray-500">Total Harga</span>
-                  <span className="text-[#cdff00] font-bold">Rp {trainer.pricePerSession.toLocaleString("id-ID")}</span>
+                  <span className="text-[#cdff00] font-bold">Rp {(trainer.pricePerSession * selectedSlots.length).toLocaleString("id-ID")}</span>
                 </div>
               </div>
             </div>

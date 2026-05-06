@@ -8,6 +8,7 @@ import BookingPage from "./pages/BookingPage.jsx";
 import DashboardPage from "./pages/DashboardPage.jsx";
 import ProfilePage from "./pages/ProfilePage.jsx";
 import AuthPage from "./pages/AuthPage.jsx";
+import AdminPage from "./pages/AdminPage.jsx";
 import { useCurrentUser } from "./hooks/useCurrentUser.js";
 
 const Spinner = () => (
@@ -16,17 +17,29 @@ const Spinner = () => (
   </div>
 );
 
-function ProtectedRoute({ children }) {
+function UserRoute({ children }) {
   const { me, loading } = useCurrentUser();
   if (loading) return <Spinner />;
   if (!me) return <Navigate to="/auth" replace />;
+  if (me.email === "admin@fitbook.com") return <Navigate to="/admin" replace />;
+  return children;
+}
+
+function AdminRoute({ children }) {
+  const { me, loading } = useCurrentUser();
+  if (loading) return <Spinner />;
+  if (!me) return <Navigate to="/auth" replace />;
+  if (me.email !== "admin@fitbook.com") return <Navigate to="/" replace />;
   return children;
 }
 
 function AuthRoute() {
   const { me, loading } = useCurrentUser();
   if (loading) return <Spinner />;
-  if (me) return <Navigate to="/" replace />;
+  if (me) {
+    if (me.email === "admin@fitbook.com") return <Navigate to="/admin" replace />;
+    return <Navigate to="/" replace />;
+  }
   return <AuthPage />;
 }
 
@@ -39,49 +52,57 @@ export default function App() {
         <Route
           path="/"
           element={
-            <ProtectedRoute>
+            <UserRoute>
               <HomePage />
-            </ProtectedRoute>
+            </UserRoute>
           }
         />
         <Route
           path="/trainers"
           element={
-            <ProtectedRoute>
+            <UserRoute>
               <TrainerListPage />
-            </ProtectedRoute>
+            </UserRoute>
           }
         />
         <Route
           path="/trainers/:trainerId"
           element={
-            <ProtectedRoute>
+            <UserRoute>
               <TrainerDetailPage />
-            </ProtectedRoute>
+            </UserRoute>
           }
         />
         <Route
           path="/book/:trainerId"
           element={
-            <ProtectedRoute>
+            <UserRoute>
               <BookingPage />
-            </ProtectedRoute>
+            </UserRoute>
           }
         />
         <Route
           path="/dashboard"
           element={
-            <ProtectedRoute>
+            <UserRoute>
               <DashboardPage />
-            </ProtectedRoute>
+            </UserRoute>
           }
         />
         <Route
           path="/profile"
           element={
-            <ProtectedRoute>
+            <UserRoute>
               <ProfilePage />
-            </ProtectedRoute>
+            </UserRoute>
+          }
+        />
+        <Route
+          path="/admin"
+          element={
+            <AdminRoute>
+              <AdminPage />
+            </AdminRoute>
           }
         />
         <Route path="*" element={<Navigate to="/" replace />} />

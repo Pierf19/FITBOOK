@@ -14,6 +14,7 @@ export default defineSchema({
     image: v.optional(v.string()),
     emailVerificationTime: v.optional(v.number()),
     isAnonymous: v.optional(v.boolean()),
+    status: v.optional(v.string()),
   })
     .index("email", ["email"]),
 
@@ -63,6 +64,8 @@ export default defineSchema({
     userId: v.id("users"),
     date: v.string(), // "YYYY-MM-DD"
     weight: v.number(), // in kg
+    height: v.optional(v.number()), // in cm
+    bmi: v.optional(v.number()),
     bodyFat: v.optional(v.number()), // in percentage
     notes: v.optional(v.string()),
     createdAt: v.number(),

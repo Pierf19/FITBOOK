@@ -41,7 +41,7 @@ export default function AuthPage() {
 				name: mode === "register" ? name.trim() : undefined,
 				role: mode === "register" ? "user" : undefined
 			});
-			navigate("/", { replace: true });
+			navigate("/admin", { replace: true });
 		} catch (err) {
             let msg = err.message ?? "Autentikasi gagal.";
             if (msg.includes("Invalid password")) {
@@ -52,6 +52,8 @@ export default function AuthPage() {
                 msg = "Format email tidak valid.";
             } else if (msg.includes("InvalidSecret")) {
                 msg = "Password salah. Silakan periksa kembali ketikan Anda.";
+            } else if (msg.includes("InvalidAccountId")) {
+                msg = "Email tidak terdaftar atau salah.";
             }
 			setError(msg);
 		} finally {

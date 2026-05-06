@@ -16,3 +16,14 @@ body {
   background-repeat: repeat;
   background-attachment: fixed;
 }
+
+/* Hide number input spinners (arrows) */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type=number] {
+  -moz-appearance: textfield;
+}

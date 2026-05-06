@@ -119,3 +119,53 @@ export const updateProfileImage = mutation({
     await ctx.db.patch(userId, { image: url });
   },
 });
+
+export const getAllUsers = query({
+  args: {},
+  handler: async (ctx) => {
+    return await ctx.db.query("users").order("desc").collect();
+  },
+});
+
+export const deleteUserAdmin = mutation({
+  args: { userId: v.id("users") },
+  handler: async (ctx, args) => {
+    await ctx.db.delete(args.userId);
+  },
+});
+
+export const createUserAdmin = mutation({
+  args: { 
+    name: v.string(),
+    email: v.string(),
+    role: v.union(v.literal("user"), v.literal("trainer")),
+    status: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.insert("users", {
+      name: args.name,
+      email: args.email,
+      role: args.role,
+      status: args.status,
+      createdAt: Date.now(),
+    });
+  },
+});
+
+export const updateUserAdmin = mutation({
+  args: { 
+    userId: v.id("users"),
+    name: v.string(),
+    email: v.string(),
+    role: v.union(v.literal("user"), v.literal("trainer")),
+    status: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.userId, {
+      name: args.name,
+      email: args.email,
+      role: args.role,
+      status: args.status,
+    });
+  },
+});

@@ -30,7 +30,8 @@ function getHourRange(dayEn) {
   return hours;
 }
 
-export default function ScheduleCalendar({ trainer, onSlotSelect, selectedSlot }) {
+// bookedSlots: { "YYYY-MM-DD": [{ startTime, endTime }, ...], ... }
+export default function ScheduleCalendar({ trainer, onSlotSelect, selectedSlots = [], bookedSlots = {} }) {
   const getSlotsForDay = (dayEn) => {
     // Determine the next upcoming calendar date for the target day.
     const today = new Date();
@@ -64,7 +65,35 @@ export default function ScheduleCalendar({ trainer, onSlotSelect, selectedSlot }
               </div>
               <div className="flex flex-col gap-[6px]">
                 {slots.map((slot) => {
-                  const isSelected = selectedSlot?.date === slot.date && selectedSlot?.startTime === slot.startTime;
+                  const isSelected = selectedSlots.some(
+                    (s) => s.date === slot.date && s.startTime === slot.startTime
+                  );
+
+                  // Cek apakah slot ini sudah dipesan user lain
+                  const isBooked =
+                    bookedSlots[slot.date]?.some(
+                      (b) => b.startTime === slot.startTime
+                    ) ?? false;
+
+                  // Slot sudah penuh — non-interaktif, tampilkan indikator merah
+                  if (isBooked) {
+                    return (
+                      <div
+                        key={`${dayEn}-${slot.startTime}`}
+                        title="Slot ini sudah dipesan"
+                        className="w-full py-2.5 rounded-md border border-rose-500/20 bg-rose-500/5 cursor-not-allowed flex flex-col items-center justify-center gap-0.5"
+                      >
+                        <span className="text-xs font-medium text-rose-500/50 line-through">
+                          {slot.startTime}
+                        </span>
+                        <span className="text-[9px] font-bold text-rose-500/60 uppercase tracking-wide">
+                          Penuh
+                        </span>
+                      </div>
+                    );
+                  }
+
+                  // Slot tersedia — bisa dipilih
                   return (
                     <button
                       key={`${dayEn}-${slot.startTime}`}
@@ -83,6 +112,22 @@ export default function ScheduleCalendar({ trainer, onSlotSelect, selectedSlot }
             </div>
           );
         })}
+      </div>
+
+      {/* Legend */}
+      <div className="mt-6 flex items-center gap-6 text-xs text-gray-500">
+        <div className="flex items-center gap-2">
+          <div className="w-3 h-3 rounded-sm bg-[#cdff00]" />
+          <span>Dipilih</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-3 h-3 rounded-sm bg-[#111] border border-[#333]" />
+          <span>Tersedia</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-3 h-3 rounded-sm bg-rose-500/10 border border-rose-500/30" />
+          <span>Penuh</span>
+        </div>
       </div>
     </div>
   );

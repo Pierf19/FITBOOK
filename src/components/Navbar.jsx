@@ -27,16 +27,24 @@ export default function Navbar() {
         </Link>
 
         <div className="flex items-center gap-6">
-          <Link to="/" className={getLinkClass("/")}>
-            Home
-          </Link>
-          <Link to="/trainers" className={getLinkClass("/trainers")}>
-            Booking
-          </Link>
-          {me && (
-            <Link to="/dashboard" className={getLinkClass("/dashboard")}>
-              Jadwal Saya
+          {me && me.email === "admin@fitbook.com" ? (
+            <Link to="/admin" className={getLinkClass("/admin")}>
+              Admin Dashboard
             </Link>
+          ) : (
+            <>
+              <Link to="/" className={getLinkClass("/")}>
+                Home
+              </Link>
+              <Link to="/trainers" className={getLinkClass("/trainers")}>
+                Booking
+              </Link>
+              {me && (
+                <Link to="/dashboard" className={getLinkClass("/dashboard")}>
+                  Jadwal Saya
+                </Link>
+              )}
+            </>
           )}
 
           {me ? (

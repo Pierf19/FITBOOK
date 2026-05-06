@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Path . -Force)",
+      "Bash(Select-Object -Property Mode, Name)",
+      "Bash(npm install *)",
+      "Bash(node server/index.js)",
+      "Bash(curl -s -X POST http://localhost:3001/api/auth/register -H \"Content-Type: application/json\" -d \"{\\\\\"name\\\\\":\\\\\"Test User\\\\\",\\\\\"email\\\\\":\\\\\"test@test.com\\\\\",\\\\\"password\\\\\":\\\\\"password123\\\\\",\\\\\"role\\\\\":\\\\\"user\\\\\"}\")",
+      "Bash(curl -s http://localhost:3001/api/report/summary)",
+      "Bash(curl -s -X POST http://localhost:3001/api/auth/login -H \"Content-Type: application/json\" -d \"{\\\\\"email\\\\\":\\\\\"wrong@test.com\\\\\",\\\\\"password\\\\\":\\\\\"bad\\\\\"}\")",
+      "Bash(npx vite *)",
+      "Bash(Get-ChildItem -Path \"d:\\\\Fitbook\\\\fitbook\\\\src\" -Recurse -File)",
+      "Bash(Select-Object FullName)",
+      "Bash(node -e ' *)",
+      "Bash(Remove-Item -Recurse -Force \"d:\\\\Fitbook\\\\fitbook\\\\server\" -ErrorAction SilentlyContinue)",
+      "Bash(Remove-Item -Force \"d:\\\\Fitbook\\\\fitbook\\\\fitbook.db\" -ErrorAction SilentlyContinue)",
+      "Bash(Remove-Item -Force \"d:\\\\Fitbook\\\\fitbook\\\\.env\" -ErrorAction SilentlyContinue)",
+      "Bash(Remove-Item -Force \"d:\\\\Fitbook\\\\fitbook\\\\src\\\\lib\\\\api.js\" -ErrorAction SilentlyContinue)",
+      "Bash(Remove-Item -Force \"d:\\\\Fitbook\\\\fitbook\\\\src\\\\context\\\\AuthContext.jsx\" -ErrorAction SilentlyContinue)"
+    ]
+  }
+}

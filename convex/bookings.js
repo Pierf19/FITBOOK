@@ -224,3 +224,33 @@ export const getBookedSlots = query({
     return bookings.map((b) => ({ startTime: b.startTime, endTime: b.endTime }));
   },
 });
+
+// Returns all booked slots for a trainer across multiple dates at once.
+// Used by the weekly calendar to mark unavailable slots in realtime.
+// Returns: { "YYYY-MM-DD": [{ startTime, endTime }, ...], ... }
+export const getBookedSlotsForDates = query({
+  args: {
+    trainerId: v.id("trainers"),
+    dates: v.array(v.string()), // e.g. ["2026-05-07", "2026-05-08", ...]
+  },
+  handler: async (ctx, args) => {
+    const result = {};
+
+    for (const date of args.dates) {
+      const bookings = await ctx.db
+        .query("bookings")
+        .withIndex("by_trainer_date", (q) =>
+          q.eq("trainerId", args.trainerId).eq("sessionDate", date)
+        )
+        .filter((q) => q.neq(q.field("status"), "cancelled"))
+        .collect();
+
+      result[date] = bookings.map((b) => ({
+        startTime: b.startTime,
+        endTime: b.endTime,
+      }));
+    }
+
+    return result;
+  },
+});

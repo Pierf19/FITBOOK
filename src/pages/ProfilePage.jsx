@@ -31,7 +31,7 @@ export default function ProfilePage() {
 
   const [isEditing, setIsEditing] = useState(false);
   const [newGoal, setNewGoal] = useState("");
-  const [newEntry, setNewEntry] = useState({ weight: "", bodyFat: "", notes: "" });
+  const [newEntry, setNewEntry] = useState({ weight: "", height: "", bodyFat: "", notes: "", age: "", gender: "Pria" });
   const [isAddingEntry, setIsAddingEntry] = useState(false);
   const [editedProfile, setEditedProfile] = useState({
     name: "",
@@ -120,6 +120,26 @@ export default function ProfilePage() {
   };
 
   const userBadge = getBadge(progress?.totalSessions || 0);
+
+  const calculateBMI = (weight, height) => {
+    if (!weight || !height) return "";
+    const w = parseFloat(weight);
+    const h = parseFloat(height) / 100;
+    if (w > 0 && h > 0) return (w / (h * h)).toFixed(1);
+    return "";
+  };
+
+  const calculateBodyFat = (weight, height, age, gender) => {
+    const bmi = calculateBMI(weight, height);
+    if (!bmi || !age) return "";
+    const b = parseFloat(bmi);
+    const a = parseFloat(age);
+    if (gender === "Pria") {
+      return ((1.20 * b) + (0.23 * a) - 10.8 - 5.4).toFixed(1);
+    } else {
+      return ((1.20 * b) + (0.23 * a) - 5.4).toFixed(1);
+    }
+  };
 
   return (
     <div className="max-w-5xl mx-auto px-6 py-12 space-y-12">
@@ -317,7 +337,7 @@ export default function ProfilePage() {
           <section className="bg-[#111] border border-[#222] rounded-[2.5rem] p-8 space-y-6">
             <div className="flex items-center justify-between">
               <h2 className="text-xs font-bold text-gray-500 uppercase tracking-[0.2em] flex items-center gap-2">
-                <Activity className="w-4 h-4" /> Metrik Tubuh
+                <Activity className="w-4 h-4" /> Metrik Dasar & Kesehatan
               </h2>
               <button 
                 onClick={() => setIsAddingEntry(!isAddingEntry)}
@@ -329,14 +349,35 @@ export default function ProfilePage() {
 
             {isAddingEntry && (
               <div className="bg-[#1a1a1a] p-4 rounded-2xl border border-[#333] space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
                   <div>
                     <label className="text-[10px] text-gray-500 uppercase font-bold tracking-widest block mb-1">Berat (kg)</label>
                     <input type="number" step="0.1" value={newEntry.weight} onChange={(e) => setNewEntry({...newEntry, weight: e.target.value})} className="w-full bg-[#111] border border-[#222] rounded-xl px-3 py-2 text-white text-sm focus:border-[#cdff00] outline-none" />
                   </div>
                   <div>
-                    <label className="text-[10px] text-gray-500 uppercase font-bold tracking-widest block mb-1">Lemak Tubuh (%)</label>
-                    <input type="number" step="0.1" value={newEntry.bodyFat} onChange={(e) => setNewEntry({...newEntry, bodyFat: e.target.value})} className="w-full bg-[#111] border border-[#222] rounded-xl px-3 py-2 text-white text-sm focus:border-[#cdff00] outline-none" />
+                    <label className="text-[10px] text-gray-500 uppercase font-bold tracking-widest block mb-1">Tinggi (cm)</label>
+                    <input type="number" step="0.1" value={newEntry.height} onChange={(e) => setNewEntry({...newEntry, height: e.target.value})} className="w-full bg-[#111] border border-[#222] rounded-xl px-3 py-2 text-white text-sm focus:border-[#cdff00] outline-none" />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-gray-500 uppercase font-bold tracking-widest block mb-1">Usia (Tahun)</label>
+                    <input type="number" value={newEntry.age} onChange={(e) => setNewEntry({...newEntry, age: e.target.value})} className="w-full bg-[#111] border border-[#222] rounded-xl px-3 py-2 text-white text-sm focus:border-[#cdff00] outline-none" />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-gray-500 uppercase font-bold tracking-widest block mb-1">Gender</label>
+                    <select value={newEntry.gender} onChange={(e) => setNewEntry({...newEntry, gender: e.target.value})} className="w-full bg-[#111] border border-[#222] rounded-xl px-3 py-2 text-white text-sm focus:border-[#cdff00] outline-none appearance-none">
+                      <option value="Pria">Pria</option>
+                      <option value="Wanita">Wanita</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-gray-500 uppercase font-bold tracking-widest block mb-1">IMT/BMI</label>
+                    <input type="text" readOnly value={calculateBMI(newEntry.weight, newEntry.height)} className="w-full bg-[#222] border border-[#222] rounded-xl px-3 py-2 text-gray-400 text-sm outline-none cursor-not-allowed" />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-gray-500 uppercase font-bold tracking-widest block mb-1">
+                      Lemak Tubuh (%)
+                    </label>
+                    <input type="text" readOnly value={calculateBodyFat(newEntry.weight, newEntry.height, newEntry.age, newEntry.gender)} className="w-full bg-[#222] border border-[#222] rounded-xl px-3 py-2 text-gray-400 text-sm outline-none cursor-not-allowed" />
                   </div>
                 </div>
                 <div>
@@ -346,14 +387,18 @@ export default function ProfilePage() {
                 <button 
                   onClick={async () => {
                     if (!newEntry.weight) return;
+                    const bmiValue = calculateBMI(newEntry.weight, newEntry.height);
+                    const bodyFatValue = calculateBodyFat(newEntry.weight, newEntry.height, newEntry.age, newEntry.gender);
                     await addEntry({
                       userId: me._id,
                       date: new Date().toISOString().split("T")[0],
                       weight: parseFloat(newEntry.weight),
-                      bodyFat: newEntry.bodyFat ? parseFloat(newEntry.bodyFat) : undefined,
+                      height: newEntry.height ? parseFloat(newEntry.height) : undefined,
+                      bmi: bmiValue ? parseFloat(bmiValue) : undefined,
+                      bodyFat: bodyFatValue ? parseFloat(bodyFatValue) : undefined,
                       notes: newEntry.notes || undefined,
                     });
-                    setNewEntry({ weight: "", bodyFat: "", notes: "" });
+                    setNewEntry({ weight: "", height: "", bodyFat: "", notes: "", age: "", gender: "Pria" });
                     setIsAddingEntry(false);
                   }}
                   className="w-full bg-[#cdff00] text-black py-2 rounded-xl font-bold text-xs uppercase hover:bg-[#b8e600] transition-colors"
@@ -369,7 +414,9 @@ export default function ProfilePage() {
                   <div>
                     <div className="flex items-center gap-3 mb-1">
                       <span className="text-sm font-black text-white">{entry.weight} kg</span>
-                      {entry.bodyFat && <span className="text-xs font-bold text-[#cdff00]">{entry.bodyFat}% BF</span>}
+                      {entry.height && <span className="text-xs font-bold text-white border-l border-[#333] pl-3">{entry.height} cm</span>}
+                      {entry.bmi && <span className="text-xs font-bold text-blue-400 border-l border-[#333] pl-3">BMI: {entry.bmi}</span>}
+                      {entry.bodyFat && <span className="text-xs font-bold text-[#cdff00] border-l border-[#333] pl-3">{entry.bodyFat}% BF</span>}
                     </div>
                     <p className="text-xs text-gray-500 font-medium">
                       {new Date(entry.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
