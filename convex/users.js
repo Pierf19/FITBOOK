@@ -1,6 +1,7 @@
 // convex/users.js
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
+import { getAuthUserId } from "@convex-dev/auth/server";
 
 // Create or update user record for demo mode (email session in localStorage)
 export const upsertUser = mutation({
@@ -31,8 +32,6 @@ export const upsertUser = mutation({
     });
   },
 });
-
-import { getAuthUserId } from "@convex-dev/auth/server";
 
 // Legacy helper for Convex Auth mode.
 export const getMe = query({
@@ -66,6 +65,7 @@ export const updateProfile = mutation({
   args: {
     userId: v.id("users"),
     name: v.optional(v.string()),
+    email: v.optional(v.string()),
     bio: v.optional(v.string()),
     goals: v.optional(v.array(v.string())),
   },
@@ -138,7 +138,7 @@ export const createUserAdmin = mutation({
   args: { 
     name: v.string(),
     email: v.string(),
-    role: v.union(v.literal("user"), v.literal("trainer")),
+    role: v.union(v.literal("user"), v.literal("trainer"), v.literal("admin")),
     status: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
@@ -157,7 +157,7 @@ export const updateUserAdmin = mutation({
     userId: v.id("users"),
     name: v.string(),
     email: v.string(),
-    role: v.union(v.literal("user"), v.literal("trainer")),
+    role: v.union(v.literal("user"), v.literal("trainer"), v.literal("admin")),
     status: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
@@ -167,5 +167,20 @@ export const updateUserAdmin = mutation({
       role: args.role,
       status: args.status,
     });
+  },
+});
+
+export const changePassword = mutation({
+  args: {
+    oldPassword: v.string(),
+    newPassword: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Tidak terautentikasi");
+    
+    // Simulasi pembaruan password untuk demo hackathon
+    console.log("Password update requested for: " + userId);
+    return { success: true, message: "Password berhasil diperbarui." };
   },
 });

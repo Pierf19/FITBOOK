@@ -5,11 +5,16 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import ScheduleCalendar from "../components/ScheduleCalendar.jsx";
 import { useCurrentUser } from "../hooks/useCurrentUser.js";
-import { Check } from "lucide-react";
+import { Check, Flame } from "lucide-react";
 
 // Hari yang ditampilkan di kalender (urutan kolom)
 const DAYS_EN = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 const EN_INDEX = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+function dayOfWeek(dateStr) {
+  const days = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+  return days[new Date(dateStr).getDay()];
+}
 
 // Hitung 7 tanggal terdekat (satu per hari dalam seminggu)
 function getWeekDates() {
@@ -45,6 +50,7 @@ export default function BookingPage() {
     api.bookings.getBookedSlotsForDates,
     trainerId ? { trainerId, dates: weekDates } : "skip"
   );
+  const suggestedSlots = useQuery(api.recommendations.getSuggestedSlots, { trainerId });
 
   // Stepper state: 2=Jadwal, 3=Data Diri, 4=Konfirmasi, 5=Success
   const [step, setStep] = useState(2);
@@ -180,6 +186,31 @@ export default function BookingPage() {
             <p className="text-sm text-gray-400 mb-8">
               Trainer: <span className="text-white font-medium">{trainer.userName}</span>
             </p>
+
+            {suggestedSlots && suggestedSlots.length > 0 && (
+              <div className="mb-8 p-6 bg-[#cdff00]/5 border border-[#cdff00]/20 rounded-2xl">
+                <p className="text-[10px] font-black text-[#cdff00] uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                  <Flame className="w-4 h-4" /> Recommended for You
+                </p>
+                <div className="flex flex-wrap gap-3">
+                  {suggestedSlots.map((slot, i) => (
+                    <button
+                      key={i}
+                      onClick={() => {
+                        const date = weekDates.find(d => dayOfWeek(d) === slot.day);
+                        if (date) {
+                          handleSlotToggle({ ...slot, date });
+                        }
+                      }}
+                      className="px-4 py-2 bg-black/50 border border-white/5 rounded-xl text-xs font-bold hover:border-[#cdff00] transition-all group"
+                    >
+                      <span className="text-gray-500 group-hover:text-white">{slot.day}</span>
+                      <span className="text-white ml-2">{slot.startTime}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <ScheduleCalendar
               trainer={trainer}

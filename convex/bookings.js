@@ -226,12 +226,10 @@ export const getBookedSlots = query({
 });
 
 // Returns all booked slots for a trainer across multiple dates at once.
-// Used by the weekly calendar to mark unavailable slots in realtime.
-// Returns: { "YYYY-MM-DD": [{ startTime, endTime }, ...], ... }
 export const getBookedSlotsForDates = query({
   args: {
     trainerId: v.id("trainers"),
-    dates: v.array(v.string()), // e.g. ["2026-05-07", "2026-05-08", ...]
+    dates: v.array(v.string()), 
   },
   handler: async (ctx, args) => {
     const result = {};
@@ -252,5 +250,25 @@ export const getBookedSlotsForDates = query({
     }
 
     return result;
+  },
+});
+
+export const getAllBookings = query({
+  args: {},
+  handler: async (ctx) => {
+    const bookings = await ctx.db.query("bookings").order("desc").collect();
+    const enriched = await Promise.all(
+      bookings.map(async (b) => {
+        const user = await ctx.db.get(b.userId);
+        const trainer = await ctx.db.get(b.trainerId);
+        const trainerUser = trainer ? await ctx.db.get(trainer.userId) : null;
+        return {
+          ...b,
+          userName: user?.name ?? "Unknown",
+          trainerName: trainerUser?.name ?? "Unknown",
+        };
+      })
+    );
+    return enriched;
   },
 });

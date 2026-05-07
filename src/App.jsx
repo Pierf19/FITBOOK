@@ -1,5 +1,5 @@
 // src/App.jsx
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import Navbar from "./components/Navbar.jsx";
 import HomePage from "./pages/HomePage.jsx";
 import TrainerListPage from "./pages/TrainerListPage.jsx";
@@ -19,34 +19,40 @@ const Spinner = () => (
 
 function UserRoute({ children }) {
   const { me, loading } = useCurrentUser();
+  const admins = ["admin@fitbook.com", "adminaulia@gmail.com"];
   if (loading) return <Spinner />;
   if (!me) return <Navigate to="/auth" replace />;
-  if (me.email === "admin@fitbook.com") return <Navigate to="/admin" replace />;
+  if (admins.includes(me.email) || me.role === "admin") return <Navigate to="/admin" replace />;
   return children;
 }
 
 function AdminRoute({ children }) {
   const { me, loading } = useCurrentUser();
+  const admins = ["admin@fitbook.com", "adminaulia@gmail.com"];
   if (loading) return <Spinner />;
   if (!me) return <Navigate to="/auth" replace />;
-  if (me.email !== "admin@fitbook.com") return <Navigate to="/" replace />;
+  if (!admins.includes(me.email) && me.role !== "admin") return <Navigate to="/" replace />;
   return children;
 }
 
 function AuthRoute() {
   const { me, loading } = useCurrentUser();
+  const admins = ["admin@fitbook.com", "adminaulia@gmail.com"];
   if (loading) return <Spinner />;
   if (me) {
-    if (me.email === "admin@fitbook.com") return <Navigate to="/admin" replace />;
+    if (admins.includes(me.email) || me.role === "admin") return <Navigate to="/admin" replace />;
     return <Navigate to="/" replace />;
   }
   return <AuthPage />;
 }
 
 export default function App() {
+  const location = useLocation();
+  const isAuthPage = location.pathname === "/auth";
+
   return (
     <div className="min-h-screen bg-[var(--color-brand-bg)] text-[var(--color-brand-text)]">
-      <Navbar />
+      {!isAuthPage && <Navbar />}
       <Routes>
         <Route path="/auth" element={<AuthRoute />} />
         <Route

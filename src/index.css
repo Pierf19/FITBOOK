@@ -3,18 +3,107 @@
 @theme {
   --color-primary: #cdff00;
   --color-primary-hover: #b8e600;
-  --color-brand-bg: #0a0a0a;
-  --color-brand-card: #151515;
+  --color-brand-bg: #050505;
+  --color-brand-card: #0a0a0a;
   --color-brand-text: #f0f0f0;
+  --color-brand-accent: #cdff00;
 }
 
-body {
-  background-color: var(--color-brand-bg);
-  color: var(--color-brand-text);
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 250 250' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.06' stroke='%23ffffff' stroke-opacity='0.06' stroke-width='4'%3E%3Cg transform='translate(40, 40) rotate(45)'%3E%3Crect x='-30' y='-5' width='60' height='10' rx='2' fill='%23ffffff' stroke='none' /%3E%3Crect x='-40' y='-20' width='10' height='40' rx='2' fill='%23ffffff' stroke='none' /%3E%3Crect x='30' y='-20' width='10' height='40' rx='2' fill='%23ffffff' stroke='none' /%3E%3C/g%3E%3Cg transform='translate(180, 80) rotate(-15)'%3E%3Ccircle cx='0' cy='-15' r='12' fill='none' /%3E%3Cpath d='M-15 -5 h30 v25 a10 10 0 0 1 -10 10 h-10 a10 10 0 0 1 -10 -10 z' fill='%23ffffff' stroke='none' /%3E%3C/g%3E%3Cg transform='translate(80, 180) rotate(20)'%3E%3Ccircle cx='0' cy='0' r='25' fill='none' stroke-width='8' /%3E%3Ccircle cx='0' cy='0' r='5' fill='none' /%3E%3C/g%3E%3Cg transform='translate(200, 200) rotate(-45)'%3E%3Crect x='-20' y='-4' width='40' height='8' rx='2' fill='%23ffffff' stroke='none' /%3E%3Crect x='-30' y='-15' width='10' height='30' rx='2' fill='%23ffffff' stroke='none' /%3E%3Crect x='20' y='-15' width='10' height='30' rx='2' fill='%23ffffff' stroke='none' /%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
-  background-size: 250px 250px;
-  background-repeat: repeat;
-  background-attachment: fixed;
+@layer base {
+  body {
+    background-color: var(--color-brand-bg);
+    color: var(--color-brand-text);
+    background-image: 
+      radial-gradient(circle at 0% 0%, rgba(205, 255, 0, 0.05) 0%, transparent 40%),
+      radial-gradient(circle at 100% 100%, rgba(205, 255, 0, 0.03) 0%, transparent 40%),
+      linear-gradient(rgba(255, 255, 255, 0.01) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.01) 1px, transparent 1px);
+    background-size: 100% 100%, 100% 100%, 40px 40px, 40px 40px;
+    background-attachment: fixed;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+}
+
+@layer components {
+  .glass {
+    background: rgba(10, 10, 10, 0.6);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  
+  .glass-card {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.01) 100%);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.8);
+  }
+
+  .premium-card {
+    background: linear-gradient(135deg, rgba(20, 20, 20, 0.8) 0%, rgba(5, 5, 5, 0.9) 100%);
+    border: 1px solid rgba(205, 255, 0, 0.1);
+    box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.5);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .premium-card:hover {
+    border-color: rgba(205, 255, 0, 0.3);
+    box-shadow: 0 20px 60px -15px rgba(205, 255, 0, 0.1);
+    transform: translateY(-4px);
+  }
+
+  .text-glow {
+    text-shadow: 0 0 15px rgba(205, 255, 0, 0.5);
+  }
+
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0) rotate(0); }
+    50% { transform: translateY(-20px) rotate(2deg); }
+  }
+
+  .animate-pulse-subtle {
+    animation: pulse-subtle 4s ease-in-out infinite;
+  }
+
+  @keyframes pulse-subtle {
+    0%, 100% { opacity: 0.3; transform: scale(1); }
+    50% { opacity: 0.6; transform: scale(1.05); }
+  }
+
+  .mesh-gradient {
+    background-color: #050505;
+    background-image: 
+      radial-gradient(at 0% 0%, rgba(205, 255, 0, 0.1) 0px, transparent 50%),
+      radial-gradient(at 100% 100%, rgba(205, 255, 0, 0.05) 0px, transparent 50%),
+      radial-gradient(at 100% 0%, rgba(0, 0, 0, 1) 0px, transparent 50%);
+  }
+
+  .glow-button {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .glow-button::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(205, 255, 0, 0.2) 0%, transparent 70%);
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+  }
+
+  .glow-button:hover::after {
+    opacity: 1;
+  }
 }
 
 /* Hide number input spinners (arrows) */
@@ -27,3 +116,5 @@ input::-webkit-inner-spin-button {
 input[type=number] {
   -moz-appearance: textfield;
 }
+
+

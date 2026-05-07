@@ -1,6 +1,7 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useCurrentUser } from "../hooks/useCurrentUser.js";
 import { useAuthActions } from "@convex-dev/auth/react";
+import { LogOut, User, LayoutDashboard, Calendar, Settings, Shield, Activity } from "lucide-react";
 
 export default function Navbar() {
   const { me } = useCurrentUser();
@@ -14,62 +15,81 @@ export default function Navbar() {
   }
 
   const getLinkClass = (path) => {
-    return location.pathname === path
-      ? "text-[#cdff00] border border-[#cdff00] px-4 py-1.5 rounded-md font-medium text-sm transition-colors"
-      : "text-gray-400 hover:text-gray-200 font-medium text-sm transition-colors";
+    const isActive = location.pathname === path;
+    return isActive
+      ? "text-[#cdff00] bg-[#cdff00]/10 px-4 py-2 rounded-xl font-bold text-xs uppercase tracking-widest transition-all border border-[#cdff00]/20"
+      : "text-gray-500 hover:text-white px-4 py-2 rounded-xl font-bold text-xs uppercase tracking-widest transition-all hover:bg-white/5";
   };
 
   return (
-    <nav className="bg-[var(--color-brand-bg)] sticky top-0 z-50 border-b border-[#222]">
-      <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-        <Link to="/" className="text-2xl font-black text-[#cdff00] tracking-tighter uppercase">
-          FITBOOK
+    <nav className="sticky top-0 z-[90] glass border-b border-white/5 px-6">
+      <div className="max-w-7xl mx-auto py-4 flex items-center justify-between">
+        <Link to="/" className="flex items-center gap-2 group">
+          <div className="w-8 h-8 bg-[#cdff00] rounded-xl flex items-center justify-center rotate-3 group-hover:rotate-12 transition-transform shadow-[0_0_15px_rgba(205,255,0,0.3)]">
+            <span className="text-black font-black text-lg leading-none">F</span>
+          </div>
+          <span className="text-xl font-black text-white tracking-tighter uppercase group-hover:text-[#cdff00] transition-colors">
+            FITBOOK<span className="text-[#cdff00]">.</span>
+          </span>
         </Link>
 
-        <div className="flex items-center gap-6">
-          {me && me.email === "admin@fitbook.com" ? (
+        <div className="flex items-center gap-2">
+          {me && (me.role === "admin" || ["admin@fitbook.com", "adminaulia@gmail.com"].includes(me.email)) ? (
             <Link to="/admin" className={getLinkClass("/admin")}>
-              Admin Dashboard
+              <div className="flex items-center gap-2">
+                <Shield className="w-3 h-3" />
+                Panel Admin
+              </div>
             </Link>
           ) : (
             <>
               <Link to="/" className={getLinkClass("/")}>
-                Home
+                <div className="flex items-center gap-2">
+                   <LayoutDashboard className="w-3 h-3" />
+                   Beranda
+                </div>
               </Link>
               <Link to="/trainers" className={getLinkClass("/trainers")}>
-                Booking
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-3 h-3" />
+                  Booking
+                </div>
               </Link>
               {me && (
                 <Link to="/dashboard" className={getLinkClass("/dashboard")}>
-                  Jadwal Saya
+                    <div className="flex items-center gap-2">
+                        <Activity className="w-3 h-3" />
+                        Jadwal Latihan
+                    </div>
                 </Link>
               )}
             </>
           )}
 
           {me ? (
-            <div className="flex items-center gap-4 border-l border-[#333] pl-6 ml-2">
-              <Link to="/profile" className="flex items-center gap-2 bg-[#1a1a1a] pr-4 rounded-full hover:bg-[#222] transition-all p-1">
+            <div className="flex items-center gap-3 border-l border-white/10 pl-4 ml-2">
+              <Link to="/profile" className="flex items-center gap-2 bg-white/5 pr-4 pl-1 py-1 rounded-2xl hover:bg-white/10 transition-all group">
                 {me.image ? (
-                  <img src={me.image} alt="Profile" className="h-7 w-7 rounded-full object-cover border border-[#cdff00]" />
+                  <img src={me.image} alt="Profile" className="h-8 w-8 rounded-xl object-cover border border-white/10 group-hover:border-[#cdff00]/50" />
                 ) : (
-                  <div className="bg-[#cdff00] text-black font-bold h-7 w-7 rounded-full flex items-center justify-center text-xs">
-                    {me.name.charAt(0).toUpperCase()}
+                  <div className="bg-gradient-to-br from-[#cdff00] to-[#b8e600] text-black font-black h-8 w-8 rounded-xl flex items-center justify-center text-xs">
+                    {(me.name || "U").charAt(0).toUpperCase()}
                   </div>
                 )}
-                <span className="text-sm text-gray-200 font-medium ml-1">{me.name.split(' ')[0]}</span>
+                <span className="text-[10px] text-gray-300 font-black uppercase tracking-widest">{(me.name || "User").split(' ')[0]}</span>
               </Link>
               <button
                 onClick={handleSignOut}
-                className="text-sm text-gray-400 hover:text-white border border-[#333] px-3 py-1.5 rounded-md transition-colors"
+                className="p-2.5 rounded-xl bg-white/5 text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition-all"
+                title="Logout"
               >
-                Keluar
+                <LogOut className="w-4 h-4" />
               </button>
             </div>
           ) : (
             <Link
               to="/auth"
-              className="bg-[#cdff00] text-black px-5 py-2 rounded-md hover:bg-[#b8e600] transition-colors font-bold text-sm"
+              className="bg-[#cdff00] text-black px-6 py-2.5 rounded-2xl hover:bg-[#b8e600] active:scale-95 transition-all font-black text-xs uppercase tracking-widest shadow-[0_0_20px_rgba(205,255,0,0.2)] ml-4"
             >
               Masuk
             </Link>
@@ -79,3 +99,4 @@ export default function Navbar() {
     </nav>
   );
 }
+

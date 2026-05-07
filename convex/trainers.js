@@ -122,6 +122,16 @@ export const getTrainer = query({
   },
 });
 
+export const getTrainerByUserId = query({
+  args: { userId: v.id("users") },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("trainers")
+      .withIndex("by_userId", (q) => q.eq("userId", args.userId))
+      .first();
+  },
+});
+
 export const createTrainerProfile = mutation({
   args: {
     bio: v.string(),
@@ -262,5 +272,80 @@ export const seedDummyTrainers = mutation({
       totalSeeded: DUMMY_TRAINERS.length,
       message: created === 0 ? "Dummy trainers already exist" : "Dummy trainers seeded",
     };
+  },
+});
+
+export const deleteTrainerProfile = mutation({
+  args: { trainerId: v.id("trainers") },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new ConvexError("Not authenticated");
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("email", (q) => q.eq("email", identity.email))
+      .first();
+    if (!user) throw new ConvexError("User not found");
+
+    const trainer = await ctx.db.get(args.trainerId);
+    if (!trainer) throw new ConvexError("Trainer not found");
+
+    if (trainer.userId !== user._id) throw new ConvexError("Unauthorized");
+
+    return await ctx.db.delete(args.trainerId);
+  },
+});
+
+export const addTrainerAdmin = mutation({
+  args: {
+    name: v.string(),
+    email: v.string(),
+    bio: v.string(),
+    specialization: v.array(v.string()),
+    pricePerSession: v.number(),
+  },
+  handler: async (ctx, args) => {
+    // 1. Create/Update user
+    let userId;
+    const existingUser = await ctx.db
+      .query("users")
+      .withIndex("email", (q) => q.eq("email", args.email))
+      .first();
+    
+    if (existingUser) {
+      userId = existingUser._id;
+      await ctx.db.patch(userId, { name: args.name, role: "trainer" });
+    } else {
+      userId = await ctx.db.insert("users", {
+        name: args.name,
+        email: args.email,
+        role: "trainer",
+        createdAt: Date.now(),
+        status: "Active",
+      });
+    }
+
+    // 2. Create/Update trainer profile
+    const existingTrainer = await ctx.db
+      .query("trainers")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .first();
+    
+    if (existingTrainer) {
+      await ctx.db.patch(existingTrainer._id, {
+        bio: args.bio,
+        specialization: args.specialization,
+        pricePerSession: args.pricePerSession,
+      });
+    } else {
+      await ctx.db.insert("trainers", {
+        userId,
+        bio: args.bio,
+        specialization: args.specialization,
+        pricePerSession: args.pricePerSession,
+        availableSlots: DEFAULT_SLOTS,
+      });
+    }
+    return { success: true };
   },
 });

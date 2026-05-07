@@ -2,7 +2,7 @@
 export default {
   providers: [
     {
-      domain: "https://admired-viper-103.convex.site",
+      domain: process.env.CONVEX_SITE_URL,
       applicationID: "convex",
     },
   ],

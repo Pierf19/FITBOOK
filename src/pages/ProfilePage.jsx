@@ -14,7 +14,8 @@ import {
   Activity,
   Flame,
   Calendar,
-  Camera
+  Camera,
+  Lock
 } from "lucide-react";
 
 export default function ProfilePage() {
@@ -26,16 +27,22 @@ export default function ProfilePage() {
   const deleteEntry = useMutation(api.progress.deleteEntry);
   const generateUploadUrl = useMutation(api.users.generateUploadUrl);
   const updateProfileImage = useMutation(api.users.updateProfileImage);
+  const userStats = useQuery(api.reports.getUserStats, me ? { userId: me._id } : "skip");
+  const changePasswordMutation = useMutation(api.users.changePassword);
 
   const [isUploading, setIsUploading] = useState(false);
 
   const [isEditing, setIsEditing] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [passwordForm, setPasswordForm] = useState({ old: "", new: "", confirm: "" });
+  const [passwordMsg, setPasswordMsg] = useState({ type: "", text: "" });
+
   const [newGoal, setNewGoal] = useState("");
   const [newEntry, setNewEntry] = useState({ weight: "", height: "", bodyFat: "", notes: "", age: "", gender: "Pria" });
   const [isAddingEntry, setIsAddingEntry] = useState(false);
   const [editedProfile, setEditedProfile] = useState({
-    name: "",
-    bio: "",
+    name: me?.name || "",
+    bio: me?.bio || "",
   });
 
   if (userLoading || !me) {
@@ -53,6 +60,31 @@ export default function ProfilePage() {
       bio: editedProfile.bio || me.bio,
     });
     setIsEditing(false);
+  };
+
+  const handleChangePassword = async (e) => {
+    e.preventDefault();
+    setPasswordMsg({ type: "", text: "" });
+
+    if (passwordForm.new !== passwordForm.confirm) {
+      setPasswordMsg({ type: "error", text: "Password baru tidak cocok." });
+      return;
+    }
+
+    try {
+      await changePasswordMutation({
+        oldPassword: passwordForm.old,
+        newPassword: passwordForm.new,
+      });
+      setPasswordMsg({ type: "success", text: "Password berhasil diperbarui!" });
+      setTimeout(() => {
+        setIsChangingPassword(false);
+        setPasswordForm({ old: "", new: "", confirm: "" });
+        setPasswordMsg({ type: "", text: "" });
+      }, 2000);
+    } catch (err) {
+      setPasswordMsg({ type: "error", text: err.message });
+    }
   };
 
   const handleImageUpload = async (e) => {
@@ -96,10 +128,10 @@ export default function ProfilePage() {
   };
 
   const stats = [
-    { label: "Total Sesi", value: progress?.totalSessions || 0, icon: Activity, color: "text-[#cdff00]" },
-    { label: "Booking Aktif", value: progress?.confirmedBookings || 0, icon: Calendar, color: "text-blue-400" },
-    { label: "Pencapaian", value: (me.goals?.length || 0), icon: Award, color: "text-purple-400" },
-    { label: "Streak", value: "5 Hari", icon: Flame, color: "text-orange-500" },
+    { label: "Total Sesi", value: userStats?.totalBookings || 0, icon: Activity, color: "text-[#cdff00]" },
+    { label: "Booking Aktif", value: userStats?.confirmedBookings || 0, icon: Calendar, color: "text-blue-400" },
+    { label: "Weight Change", value: `${userStats?.weightChange || 0} kg`, icon: TrendingUp, color: "text-purple-400" },
+    { label: "Current BMI", value: userStats?.bmi || 0, icon: Flame, color: "text-orange-500" },
   ];
 
   const specializationIcons = {
@@ -112,11 +144,11 @@ export default function ProfilePage() {
   };
 
   const getBadge = (sessions) => {
-    if (sessions >= 20) return { name: "Apex Predator", border: "border-red-500/50", bg: "bg-red-500/10", text: "text-red-500", icon: "👑" };
-    if (sessions >= 10) return { name: "Titanium Core", border: "border-cyan-400/50", bg: "bg-cyan-400/10", text: "text-cyan-400", icon: "💎" };
-    if (sessions >= 5) return { name: "Forged Steel", border: "border-gray-400/50", bg: "bg-gray-400/10", text: "text-gray-300", icon: "⚔️" };
-    if (sessions >= 2) return { name: "Ignited Spark", border: "border-orange-500/50", bg: "bg-orange-500/10", text: "text-orange-500", icon: "🔥" };
-    return { name: "Raw Iron", border: "border-stone-600/50", bg: "bg-stone-600/10", text: "text-stone-400", icon: "🧱" };
+    if (sessions >= 20) return { name: "Atlet Legendaris", border: "border-red-500/50", bg: "bg-red-500/10", text: "text-red-500", icon: "👑" };
+    if (sessions >= 10) return { name: "Pejuang Kebugaran", border: "border-cyan-400/50", bg: "bg-cyan-400/10", text: "text-cyan-400", icon: "💎" };
+    if (sessions >= 5) return { name: "Otot Terlatih", border: "border-gray-400/50", bg: "bg-gray-400/10", text: "text-gray-300", icon: "⚔️" };
+    if (sessions >= 2) return { name: "Semangat Baru", border: "border-orange-500/50", bg: "bg-orange-500/10", text: "text-orange-500", icon: "🔥" };
+    return { name: "Langkah Awal", border: "border-stone-600/50", bg: "bg-stone-600/10", text: "text-stone-400", icon: "🧱" };
   };
 
   const userBadge = getBadge(progress?.totalSessions || 0);
@@ -170,43 +202,65 @@ export default function ProfilePage() {
           <div className="flex-1 text-center md:text-left space-y-4">
             {isEditing ? (
               <div className="space-y-4 max-w-md">
-                <input
-                  type="text"
-                  defaultValue={me.name}
-                  onChange={(e) => setEditedProfile({ ...editedProfile, name: e.target.value })}
-                  className="w-full bg-[#1a1a1a] border border-[#333] rounded-xl px-4 py-2 text-white font-bold text-3xl focus:border-[#cdff00] outline-none"
-                />
-                <textarea
-                  placeholder="Ceritakan sedikit tentang dirimu..."
-                  defaultValue={me.bio}
-                  onChange={(e) => setEditedProfile({ ...editedProfile, bio: e.target.value })}
-                  className="w-full bg-[#1a1a1a] border border-[#333] rounded-xl px-4 py-2 text-gray-400 h-24 focus:border-[#cdff00] outline-none resize-none"
-                />
+                <div>
+                  <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1 block">Nama Lengkap</label>
+                  <input
+                    type="text"
+                    value={editedProfile.name}
+                    onChange={(e) => setEditedProfile({ ...editedProfile, name: e.target.value })}
+                    className="w-full bg-[#1a1a1a] border border-[#333] rounded-xl px-4 py-3 text-white font-bold text-xl focus:border-[#cdff00] outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1 block">Bio / Deskripsi</label>
+                  <textarea
+                    placeholder="Ceritakan sedikit tentang dirimu..."
+                    value={editedProfile.bio}
+                    onChange={(e) => setEditedProfile({ ...editedProfile, bio: e.target.value })}
+                    className="w-full bg-[#1a1a1a] border border-[#333] rounded-xl px-4 py-3 text-gray-400 h-24 focus:border-[#cdff00] outline-none resize-none text-sm"
+                  />
+                </div>
                 <div className="flex gap-2">
-                  <button onClick={handleUpdate} className="bg-[#cdff00] text-black px-6 py-2 rounded-xl font-bold text-sm">Simpan</button>
-                  <button onClick={() => setIsEditing(false)} className="bg-[#222] text-white px-6 py-2 rounded-xl font-bold text-sm">Batal</button>
+                  <button onClick={handleUpdate} className="bg-[#cdff00] text-black px-8 py-2.5 rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-[#b8e600] transition-all">Simpan Perubahan</button>
+                  <button onClick={() => setIsEditing(false)} className="bg-white/5 text-white px-8 py-2.5 rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-white/10 transition-all">Batal</button>
                 </div>
               </div>
             ) : (
               <>
                 <div className="flex items-center justify-center md:justify-start gap-4">
                   <h1 className="text-4xl md:text-5xl font-black text-white tracking-tighter uppercase">{me.name}</h1>
-                  <button onClick={() => setIsEditing(true)} className="text-gray-500 hover:text-white transition-colors">
-                    <Settings className="w-5 h-5" />
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button 
+                      onClick={() => {
+                        setEditedProfile({ name: me.name, bio: me.bio || "" });
+                        setIsEditing(true);
+                      }} 
+                      className="p-2 rounded-lg bg-white/5 text-gray-400 hover:text-white hover:bg-white/10 transition-all"
+                      title="Edit Profil"
+                    >
+                      <Settings className="w-5 h-5" />
+                    </button>
+                    <button 
+                      onClick={() => setIsChangingPassword(true)}
+                      className="p-2 rounded-lg bg-white/5 text-gray-400 hover:text-white hover:bg-white/10 transition-all"
+                      title="Ganti Password"
+                    >
+                      <Lock className="w-5 h-5" />
+                    </button>
+                  </div>
                 </div>
                 <p className="text-gray-400 max-w-lg leading-relaxed font-medium">
                   {me.bio || "Belum ada bio. Tambahkan bio untuk memberi tahu trainer tentang dirimu!"}
                 </p>
                 <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 mt-2">
                   <span className="bg-[#cdff00]/10 text-[#cdff00] px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider border border-[#cdff00]/20">
-                    {me.role === "trainer" ? "Pelatih" : "Klien"}
+                    {me.role === "trainer" ? "Pelatih" : "Member"}
                   </span>
                   <span className={`${userBadge.bg} ${userBadge.text} px-4 py-1.5 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-wider border ${userBadge.border} flex items-center gap-1.5 shadow-lg`}>
                     <span className="text-sm">{userBadge.icon}</span> {userBadge.name}
                   </span>
                   <span className="text-gray-600 text-xs font-bold uppercase tracking-widest hidden sm:inline">
-                    Member Sejak {new Date(me.createdAt).getFullYear()}
+                    Terdaftar Sejak {new Date(me.createdAt).getFullYear()}
                   </span>
                 </div>
               </>
@@ -438,6 +492,68 @@ export default function ProfilePage() {
           </section>
         </div>
       </div>
+
+      {/* Password Change Modal */}
+      {isChangingPassword && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-6">
+          <div className="bg-[#111] border border-[#222] w-full max-w-md rounded-[2.5rem] p-10 space-y-8 animate-in fade-in zoom-in duration-300">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-black text-white uppercase tracking-tighter">Ganti Password</h2>
+              <button onClick={() => setIsChangingPassword(false)} className="text-gray-500 hover:text-white transition-colors">
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            <form onSubmit={handleChangePassword} className="space-y-6">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Password Lama</label>
+                <input 
+                  type="password" 
+                  required
+                  value={passwordForm.old}
+                  onChange={(e) => setPasswordForm({...passwordForm, old: e.target.value})}
+                  className="w-full bg-[#1a1a1a] border border-[#333] rounded-2xl px-5 py-4 text-white text-sm focus:border-[#cdff00] outline-none" 
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Password Baru</label>
+                <input 
+                  type="password" 
+                  required
+                  value={passwordForm.new}
+                  onChange={(e) => setPasswordForm({...passwordForm, new: e.target.value})}
+                  className="w-full bg-[#1a1a1a] border border-[#333] rounded-2xl px-5 py-4 text-white text-sm focus:border-[#cdff00] outline-none" 
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Konfirmasi Password</label>
+                <input 
+                  type="password" 
+                  required
+                  value={passwordForm.confirm}
+                  onChange={(e) => setPasswordForm({...passwordForm, confirm: e.target.value})}
+                  className="w-full bg-[#1a1a1a] border border-[#333] rounded-2xl px-5 py-4 text-white text-sm focus:border-[#cdff00] outline-none" 
+                />
+              </div>
+
+              {passwordMsg.text && (
+                <div className={`p-4 rounded-xl text-xs font-bold uppercase tracking-widest ${passwordMsg.type === 'error' ? 'bg-red-500/10 text-red-500' : 'bg-[#cdff00]/10 text-[#cdff00]'}`}>
+                  {passwordMsg.text}
+                </div>
+              )}
+
+              <button 
+                type="submit"
+                className="w-full bg-[#cdff00] text-black py-4 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-[#b8e600] active:scale-95 transition-all"
+              >
+                Perbarui Password
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

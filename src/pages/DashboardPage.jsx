@@ -4,6 +4,7 @@ import { useQuery, useMutation } from "convex/react";
 import { Link } from "react-router-dom";
 import { api } from "../../convex/_generated/api";
 import { useCurrentUser } from "../hooks/useCurrentUser.js";
+import { Calendar, Clock, TrendingUp, AlertCircle, CheckCircle2, ChevronRight, Activity } from "lucide-react";
 
 function formatIDR(amount) {
   return new Intl.NumberFormat("id-ID", {
@@ -308,6 +309,10 @@ function UserDashboard({ me, sessionEmail }) {
   const upcoming = groupBookings(rawUpcoming);
   const past = groupBookings(rawPast);
 
+  const totalSessions = bookings?.length || 0;
+  const confirmedSessions = bookings?.filter(b => b.status === "confirmed").length || 0;
+  const totalHours = bookings?.reduce((acc, b) => acc + (b.sessionCount || 1), 0) || 0;
+
   async function handleCancel(bookingIds) {
     if (!sessionEmail) return;
     for (const id of bookingIds) {
@@ -317,11 +322,42 @@ function UserDashboard({ me, sessionEmail }) {
 
   return (
     <div className="space-y-12">
-      <div className="flex flex-col items-start gap-2">
-        <h1 className="text-6xl font-black text-white tracking-tighter uppercase leading-none">Jadwal Saya</h1>
-        <p className="text-gray-500 font-medium text-sm">
-          {bookings?.length || 0} total sesi · {upcoming.length} aktif
-        </p>
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div className="flex flex-col items-start gap-2">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#cdff00]/10 border border-[#cdff00]/20 text-[#cdff00] text-[10px] font-black uppercase tracking-[0.2em] mb-2">
+                <Activity className="w-3 h-3" />
+                DASHBOARD MEMBER
+            </div>
+            <h1 className="text-6xl font-black text-white tracking-tighter uppercase leading-none">Jadwal Saya</h1>
+            <p className="text-gray-500 font-medium text-sm">Kelola sesi latihan dan pantau progres transformasi Anda.</p>
+        </div>
+        
+        <Link to="/trainers" className="bg-[#cdff00] text-black px-6 py-3 rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-[#b8e600] transition-all flex items-center gap-2 group">
+            Booking Sesi Baru
+            <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+        </Link>
+      </div>
+
+      {/* Stats Summary */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {[
+            { icon: Calendar, label: "Total Sesi", value: totalSessions, sub: "Riwayat & Aktif", color: "text-white" },
+            { icon: Clock, label: "Jam Latihan", value: totalHours, sub: "Total Durasi", color: "text-[#cdff00]" },
+            { icon: TrendingUp, label: "Sesi Aktif", value: confirmedSessions, sub: "Terkonfirmasi", color: "text-emerald-400" },
+        ].map((stat, i) => (
+            <div key={i} className="p-8 rounded-[2.5rem] bg-white/[0.02] border border-white/5 flex flex-col gap-4">
+                <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-gray-400">
+                    <stat.icon className="w-5 h-5" />
+                </div>
+                <div>
+                    <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">{stat.label}</p>
+                    <div className="flex items-baseline gap-2">
+                        <span className={`text-4xl font-black tracking-tighter ${stat.color}`}>{stat.value}</span>
+                        <span className="text-[10px] font-black text-gray-700 uppercase">{stat.sub}</span>
+                    </div>
+                </div>
+            </div>
+        ))}
       </div>
 
       <section>

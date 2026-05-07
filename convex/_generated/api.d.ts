@@ -13,6 +13,8 @@ import type * as bookings from "../bookings.js";
 import type * as http from "../http.js";
 import type * as progress from "../progress.js";
 import type * as recommendations from "../recommendations.js";
+import type * as reports from "../reports.js";
+import type * as settings from "../settings.js";
 import type * as trainers from "../trainers.js";
 import type * as users from "../users.js";
 
@@ -28,6 +30,8 @@ declare const fullApi: ApiFromModules<{
   http: typeof http;
   progress: typeof progress;
   recommendations: typeof recommendations;
+  reports: typeof reports;
+  settings: typeof settings;
   trainers: typeof trainers;
   users: typeof users;
 }>;

@@ -7,7 +7,7 @@ export default defineSchema({
   users: defineTable({
     name: v.string(),
     email: v.string(),
-    role: v.union(v.literal("user"), v.literal("trainer")),
+    role: v.union(v.literal("user"), v.literal("trainer"), v.literal("admin")),
     bio: v.optional(v.string()),
     goals: v.optional(v.array(v.string())),
     createdAt: v.number(),
@@ -50,6 +50,7 @@ export default defineSchema({
   })
     .index("by_userId", ["userId"])
     .index("by_trainerId", ["trainerId"])
+    .index("by_status", ["status"])
     .index("by_trainer_date", ["trainerId", "sessionDate"]),
 
   userActivity: defineTable({
@@ -70,4 +71,13 @@ export default defineSchema({
     notes: v.optional(v.string()),
     createdAt: v.number(),
   }).index("by_userId", ["userId"]),
+
+  systemSettings: defineTable({
+    dailyBookingLimit: v.number(),
+    maintenanceMode: v.boolean(),
+    whatsappNotifications: v.boolean(),
+    accentColor: v.string(),
+    complexAnimations: v.boolean(),
+    updatedAt: v.number(),
+  }),
 });
